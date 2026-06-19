@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Provenance — A Citation Tracer for Statistics That Travel</title>
+<meta name="description" content="Famous statistics, traced from the version everyone repeats back to the primary document — with the exact quote and the precise point where the retelling drifts." />
+<!-- ============================================================
+     PROVENANCE — a citation tracer for statistics that travel.
+     Every claim is checked against its primary source and records,
+     in order: (1) the claim as cited, (2) the primary source,
+     (3) the source's exact words, (4) where the retelling drifts.
+     This is not a verdict on whether an issue is real — only a
+     check on whether the cited number says what the citation implies.
+     ============================================================ -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Display&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet" />
+<style>
+:root{
+  --desk:#DAD6C9; --paper:#EFEBE1; --paper-2:#E7E2D6;
+  --ink:#1B2A33; --ink-soft:rgba(27,42,51,.64); --ink-faint:rgba(27,42,51,.42);
+  --oxide:#A33523; --oxide-wash:rgba(163,53,35,.10);
+  --verd:#2C5A4E; --verd-wash:rgba(44,90,78,.10);
+  --sepia:#7A6A52; --rule:rgba(27,42,51,.16); --edge:rgba(27,42,51,.10);
+  --display:"Libre Caslon Display",Georgia,"Times New Roman",serif;
+  --serif:"Spectral",Georgia,serif;
+  --ui:"Archivo",system-ui,-apple-system,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  --maxw:1180px;
+  --shadow:0 1px 0 rgba(27,42,51,.05),0 14px 34px -22px rgba(27,42,51,.5);
+}
+*{box-sizing:border-box;}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth;}
+body{margin:0;background:var(--desk);color:var(--ink);font-family:var(--serif);font-size:17px;line-height:1.62;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+img{max-width:100%;display:block;}
+a{color:inherit;}
+button{font-family:inherit;color:inherit;cursor:pointer;border:none;background:none;}
+::selection{background:var(--oxide);color:#fff;}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.5;background-image:radial-gradient(rgba(27,42,51,.025) 1px,transparent 1px);background-size:3px 3px;}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 28px;position:relative;z-index:1;}
+/* masthead */
+.mast{border-bottom:1px solid var(--ink);background:var(--paper);position:relative;z-index:2;}
+.mast__bar{display:flex;justify-content:space-between;align-items:center;gap:18px;padding:11px 0;border-bottom:1px solid var(--edge);font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--ink-soft);text-transform:uppercase;}
+.mast__bar span{white-space:nowrap;}
+.mast__bar .dot{color:var(--oxide);}
+.mast__id{display:flex;gap:18px;}
+.mast__head{padding:30px 0 26px;}
+.wordmark{font-family:var(--display);font-weight:400;line-height:.9;font-size:clamp(54px,12vw,128px);letter-spacing:-.01em;margin:0;}
+.sub{font-family:var(--ui);font-weight:500;font-size:clamp(13px,1.7vw,16px);letter-spacing:.02em;color:var(--ink-soft);margin:14px 0 0;max-width:46ch;}
+.sub em{font-style:italic;color:var(--oxide);font-weight:600;}
+/* hero */
+.hero{background:var(--paper);border-bottom:1px solid var(--ink);padding:6px 0 56px;}
+.hero__label{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint);margin:0 0 18px;display:flex;align-items:center;gap:10px;}
+.hero__label::before{content:"";height:1px;width:34px;background:var(--ink-faint);}
+.hero__stage{font-family:var(--display);font-weight:400;font-size:clamp(28px,5vw,56px);line-height:1.08;letter-spacing:-.005em;max-width:18ch;}
+.hero__cited{display:block;}
+.hero__sourced{display:block;margin-top:.18em;}
+.hero del{text-decoration:none;color:var(--oxide);position:relative;white-space:nowrap;}
+.hero del::after{content:"";position:absolute;left:-2px;right:-2px;top:52%;height:2.5px;background:var(--oxide);transform:scaleX(var(--strike,0));transform-origin:left;transition:transform .5s cubic-bezier(.2,.7,.3,1);}
+.hero ins{text-decoration:none;color:var(--verd);display:inline-block;opacity:var(--reveal,0);transform:translateY(var(--rise,.25em));transition:opacity .55s ease .25s,transform .55s cubic-bezier(.2,.7,.3,1) .25s;}
+.hero__src{font-family:var(--mono);font-size:12.5px;letter-spacing:.02em;color:var(--ink-soft);margin:30px 0 0;max-width:60ch;line-height:1.7;opacity:var(--reveal,0);transition:opacity .6s ease .5s;}
+.hero__src em{font-style:italic;color:var(--ink);}
+.hero__src a{color:var(--verd);text-decoration:none;border-bottom:1px solid var(--verd-wash);}
+.hero__src a:hover{border-bottom-color:var(--verd);}
+.hero__scroll{margin-top:38px;display:inline-flex;align-items:center;gap:10px;font-family:var(--ui);font-weight:600;font-size:13px;letter-spacing:.02em;border-bottom:2px solid var(--ink);padding-bottom:3px;}
+.hero__scroll:hover{color:var(--oxide);border-color:var(--oxide);}
+/* method */
+.method{background:var(--ink);color:var(--paper);padding:44px 0;}
+.method__grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:rgba(239,235,225,.15);}
+.method__step{background:var(--ink);padding:22px 22px 24px;}
+.method__n{font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:rgba(239,235,225,.5);}
+.method__t{font-family:var(--ui);font-weight:700;font-size:16px;margin:10px 0 7px;letter-spacing:.01em;}
+.method__d{font-family:var(--serif);font-size:14px;line-height:1.55;color:rgba(239,235,225,.78);margin:0;}
+.method__note{font-family:var(--mono);font-size:12px;color:rgba(239,235,225,.6);margin:26px 0 0;line-height:1.7;max-width:74ch;}
+.method__note b{color:var(--paper);font-weight:500;}
+/* controls */
+.controls{background:var(--paper);border-bottom:1px solid var(--ink);padding:40px 0 34px;}
+.controls__head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:14px;margin-bottom:8px;}
+.controls__title{font-family:var(--display);font-size:clamp(22px,3vw,30px);margin:0;letter-spacing:-.01em;}
+.controls__count{font-family:var(--mono);font-size:12px;color:var(--ink-soft);letter-spacing:.04em;}
+.controls__legend{font-family:var(--serif);font-size:14.5px;color:var(--ink-soft);max-width:68ch;margin:0 0 24px;}
+.filtergroup{margin-top:20px;}
+.filtergroup__label{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint);margin:0 0 11px;}
+.chips{display:flex;flex-wrap:wrap;gap:8px;}
+.chip{font-family:var(--ui);font-weight:600;font-size:12.5px;letter-spacing:.01em;padding:7px 13px;border:1px solid var(--rule);border-radius:2px;background:transparent;color:var(--ink-soft);transition:all .16s ease;display:inline-flex;align-items:center;gap:8px;}
+.chip:hover{border-color:var(--ink);color:var(--ink);}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink);}
+.chip__code{font-family:var(--mono);font-size:10px;opacity:.7;}
+.chip--drift[aria-pressed="true"]{background:var(--oxide);border-color:var(--oxide);}
+.chip__gloss{font-family:var(--serif);font-size:13px;color:var(--ink-soft);margin:10px 2px 0;min-height:1.4em;font-style:italic;}
+/* catalog */
+.catalog{background:var(--desk);padding:46px 0 70px;}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
+.case{background:var(--paper);border:1px solid var(--ink);border-radius:3px;padding:0;text-align:left;display:flex;flex-direction:column;position:relative;transition:transform .18s ease,box-shadow .18s ease;overflow:hidden;width:100%;}
+.case:hover{transform:translateY(-3px);box-shadow:var(--shadow);}
+.case:focus-visible{outline:2.5px solid var(--oxide);outline-offset:3px;}
+.case__top{display:flex;justify-content:space-between;align-items:flex-start;padding:15px 18px 0;}
+.case__acc{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;color:var(--ink-faint);}
+.case__domain{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--verd);border:1px solid var(--verd-wash);background:var(--verd-wash);padding:3px 7px;border-radius:2px;white-space:nowrap;}
+.case__num{font-family:var(--display);font-size:clamp(46px,6vw,62px);line-height:.92;letter-spacing:-.02em;padding:14px 18px 4px;color:var(--ink);}
+.case__claim{font-family:var(--serif);font-weight:500;font-size:17px;line-height:1.34;padding:0 18px 16px;color:var(--ink);}
+.case__foot{margin-top:auto;border-top:1px solid var(--edge);padding:12px 18px;display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.case__drift{display:flex;flex-wrap:wrap;gap:5px;}
+.tag{font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--oxide);border:1px solid var(--oxide-wash);background:var(--oxide-wash);padding:3px 6px;border-radius:2px;}
+.case__open{font-family:var(--ui);font-weight:600;font-size:12px;color:var(--ink-soft);white-space:nowrap;}
+.case:hover .case__open{color:var(--oxide);}
+.empty{grid-column:1/-1;text-align:center;padding:60px 20px;font-family:var(--serif);font-style:italic;color:var(--ink-soft);}
+/* dossier */
+.dossier{position:fixed;inset:0;z-index:50;background:rgba(27,42,51,.46);display:none;opacity:0;transition:opacity .25s ease;overflow-y:auto;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);}
+.dossier.is-open{display:block;opacity:1;}
+.dossier__sheet{background:var(--paper);max-width:920px;margin:0 auto;min-height:100%;border-left:1px solid var(--ink);border-right:1px solid var(--ink);transform:translateY(14px);transition:transform .3s cubic-bezier(.2,.7,.3,1);}
+.dossier.is-open .dossier__sheet{transform:translateY(0);}
+.dossier__bar{position:sticky;top:0;z-index:2;background:var(--ink);color:var(--paper);display:flex;justify-content:space-between;align-items:center;padding:13px 26px;border-bottom:1px solid var(--ink);}
+.dossier__bar-id{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:rgba(239,235,225,.7);}
+.dossier__close{font-family:var(--ui);font-weight:600;font-size:13px;color:var(--paper);display:inline-flex;align-items:center;gap:9px;letter-spacing:.02em;}
+.dossier__close:hover{color:#fff;}
+.dossier__close .x{font-family:var(--mono);font-size:17px;line-height:1;}
+.dossier__body{padding:38px clamp(24px,5vw,64px) 70px;}
+.dossier__domain{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--verd);margin:0 0 16px;}
+.dossier__title{font-family:var(--display);font-size:clamp(28px,4.4vw,46px);line-height:1.02;letter-spacing:-.01em;margin:0 0 8px;}
+.dossier__deck{font-family:var(--serif);font-size:18px;color:var(--ink-soft);font-style:italic;margin:0 0 36px;max-width:60ch;}
+.chain{position:relative;margin:0;padding:0;}
+.chain__node{position:relative;padding:0 0 34px 46px;}
+.chain__node:last-child{padding-bottom:0;}
+.chain__node::before{content:"";position:absolute;left:13px;top:6px;bottom:-6px;width:2px;background:var(--rule);}
+.chain__node:last-child::before{display:none;}
+.chain__dot{position:absolute;left:5px;top:3px;width:18px;height:18px;border-radius:50%;background:var(--paper);border:2px solid var(--ink);z-index:1;}
+.chain__node--source .chain__dot{border-color:var(--verd);background:var(--verd);}
+.chain__node--drift .chain__dot{border-color:var(--oxide);background:var(--oxide);}
+.chain__step{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);margin:0 0 12px;display:flex;align-items:center;gap:9px;padding-top:1px;}
+.chain__node--source .chain__step{color:var(--verd);}
+.chain__node--drift .chain__step{color:var(--oxide);}
+.cited-claim{font-family:var(--display);font-size:clamp(21px,3vw,28px);line-height:1.14;margin:0;letter-spacing:-.005em;}
+.srcblock{background:var(--verd-wash);border:1px solid var(--verd);border-radius:3px;padding:18px 20px;}
+.srcblock__authors{font-family:var(--ui);font-weight:700;font-size:16px;margin:0 0 4px;}
+.srcblock__title{font-family:var(--serif);font-style:italic;font-size:16px;color:var(--ink);margin:0 0 8px;line-height:1.4;}
+.srcblock__venue{font-family:var(--mono);font-size:12px;color:var(--ink-soft);margin:0 0 14px;letter-spacing:.01em;line-height:1.6;}
+.srcblock__links{display:flex;flex-wrap:wrap;gap:8px;}
+.srclink{font-family:var(--ui);font-weight:600;font-size:12px;letter-spacing:.01em;display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border:1px solid var(--verd);border-radius:2px;color:var(--verd);text-decoration:none;transition:all .15s ease;background:var(--paper);}
+.srclink:hover{background:var(--verd);color:var(--paper);}
+.srclink .arr{font-family:var(--mono);}
+.srcblock__none{font-family:var(--serif);font-style:italic;font-size:14px;color:var(--ink-soft);margin:0;}
+.quote{font-family:var(--serif);font-size:clamp(18px,2.4vw,22px);line-height:1.5;border-left:3px solid var(--ink);padding:4px 0 4px 22px;margin:0;color:var(--ink);}
+.quote__attr{display:block;font-family:var(--mono);font-size:11px;letter-spacing:.03em;color:var(--ink-faint);margin-top:14px;}
+.redline{background:var(--paper-2);border:1px solid var(--rule);border-radius:3px;padding:20px 22px;margin:0 0 16px;}
+.redline__row{display:flex;gap:13px;align-items:baseline;padding:7px 0;}
+.redline__row + .redline__row{border-top:1px dashed var(--rule);}
+.redline__tag{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-faint);flex:0 0 78px;padding-top:5px;}
+.redline__row--sourced .redline__tag{color:var(--verd);}
+.redline__text{font-family:var(--serif);font-size:18px;line-height:1.5;}
+.redline__text del{text-decoration:none;color:var(--oxide);position:relative;}
+.redline__text del::after{content:"";position:absolute;left:0;right:0;top:54%;height:2px;background:var(--oxide);}
+.redline__text ins{text-decoration:none;color:var(--verd);background:var(--verd-wash);padding:0 3px;border-radius:2px;}
+.drift-explain{font-family:var(--serif);font-size:16.5px;line-height:1.62;margin:0;color:var(--ink);}
+.drift-explain em{font-style:italic;color:var(--oxide);}
+.caveats{font-family:var(--serif);font-size:16px;line-height:1.62;margin:0;color:var(--ink);}
+.verdict{margin-top:38px;border-top:2px solid var(--ink);padding-top:24px;display:grid;grid-template-columns:auto 1fr;gap:22px;align-items:start;}
+.verdict__codes{display:flex;flex-direction:column;gap:6px;}
+.verdict__line{font-family:var(--serif);font-size:18px;line-height:1.5;margin:0;}
+.verdict__line b{font-weight:600;}
+.context{margin-top:22px;background:var(--ink);color:var(--paper);border-radius:3px;padding:20px 22px;}
+.context__label{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:rgba(239,235,225,.55);margin:0 0 9px;}
+.context__text{font-family:var(--serif);font-size:15.5px;line-height:1.6;margin:0;color:rgba(239,235,225,.9);}
+.dossier__nav{display:flex;justify-content:space-between;gap:12px;margin-top:44px;border-top:1px solid var(--edge);padding-top:22px;}
+.dnav{font-family:var(--ui);font-weight:600;font-size:13px;color:var(--ink-soft);display:flex;flex-direction:column;gap:3px;max-width:46%;text-align:left;}
+.dnav:hover{color:var(--oxide);}
+.dnav__dir{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);}
+.dnav--next{text-align:right;align-items:flex-end;}
+/* colophon */
+.colophon{background:var(--ink);color:var(--paper);padding:54px 0 60px;}
+.colophon__grid{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:36px;}
+.col-h{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:rgba(239,235,225,.5);margin:0 0 14px;}
+.col-b{font-family:var(--serif);font-size:15px;line-height:1.62;color:rgba(239,235,225,.82);margin:0 0 14px;}
+.col-b a{color:#fff;border-bottom:1px solid rgba(255,255,255,.3);text-decoration:none;}
+.col-list{font-family:var(--mono);font-size:12.5px;line-height:2.1;color:rgba(239,235,225,.78);}
+.colophon__rule{height:1px;background:rgba(239,235,225,.18);margin:40px 0 22px;}
+.colophon__base{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;font-family:var(--mono);font-size:11px;letter-spacing:.04em;color:rgba(239,235,225,.55);}
+.colophon__base .credit{color:rgba(239,235,225,.85);}
+@media(max-width:980px){.grid{grid-template-columns:repeat(2,1fr);}.method__grid{grid-template-columns:repeat(2,1fr);}.colophon__grid{grid-template-columns:1fr;gap:28px;}}
+@media(max-width:680px){body{font-size:16px;}.wrap{padding:0 18px;}.grid{grid-template-columns:1fr;}.method__grid{grid-template-columns:1fr;}.mast__id .hide-sm{display:none;}.verdict{grid-template-columns:1fr;gap:14px;}.dossier__body{padding:30px 20px 60px;}.redline__row{flex-direction:column;gap:4px;}.redline__tag{flex-basis:auto;padding-top:0;}.hero__stage{font-size:clamp(26px,7vw,40px);}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;}.hero del::after{transform:scaleX(1);}.hero ins,.hero__src{opacity:1;transform:none;}}
+</style>
+<noscript><style>
+  .hero del::after{transform:scaleX(1);}
+  .hero ins,.hero__src{opacity:1;transform:none;}
+</style></noscript>
+</head>
+<body>
+<header class="mast">
+  <div class="wrap">
+    <div class="mast__bar">
+      <div class="mast__id">
+        <span><span class="dot">&#9679;</span> The Provenance Register</span>
+        <span class="hide-sm">Standards of credibility, rendered as software</span>
+      </div>
+      <span id="entryCount">&mdash; entries on file</span>
+    </div>
+    <div class="mast__head">
+      <h1 class="wordmark">Provenance</h1>
+      <p class="sub">A citation tracer for statistics that travel. Each number is followed from the version everyone repeats back to the primary document &mdash; and to the exact point where the retelling <em>drifts.</em></p>
+    </div>
+  </div>
+</header>
+<section class="hero">
+  <div class="wrap">
+    <p class="hero__label">Exhibit A &middot; how a statistic loses its footnote</p>
+    <div class="hero__stage" id="heroStage" aria-label="The claim that ninety-seven percent of scientists agree on climate change, corrected to what the source actually measured.">
+      <span class="hero__cited">&ldquo;97% of <del id="heroDel">scientists</del> agree&hellip;&rdquo;</span>
+      <span class="hero__sourced">&hellip;<ins id="heroIns">of the third of climate papers that took a position.</ins></span>
+    </div>
+    <p class="hero__src" id="heroSrc">
+      Cook et&nbsp;al. (2013) read 11,944 abstracts. Two-thirds stated no position; of the third that did, 97.1% endorsed human-caused warming. The figure is real &mdash; and other studies put the consensus higher still. What dropped on the way to the headline was the phrase <em>&ldquo;expressing a position.&rdquo;</em>
+      <a href="https://iopscience.iop.org/article/10.1088/1748-9326/8/2/024024" target="_blank" rel="noopener">Read the primary study&nbsp;&#8599;</a>
+    </p>
+    <a class="hero__scroll" href="#register">Open the register &darr;</a>
+  </div>
+</section>
+<section class="method">
+  <div class="wrap">
+    <div class="method__grid">
+      <div class="method__step"><div class="method__n">01 / Claim</div><div class="method__t">As it is cited</div><p class="method__d">The number in the form it actually circulates &mdash; speeches, posts, headlines, slides.</p></div>
+      <div class="method__step"><div class="method__n">02 / Source</div><div class="method__t">Trace to the document</div><p class="method__d">Follow it back to the study, agency, or filing it rests on &mdash; or find that it rests on nothing.</p></div>
+      <div class="method__step"><div class="method__n">03 / Quote</div><div class="method__t">What the source says</div><p class="method__d">The primary text, verbatim and attributed. The words the popular version was built from.</p></div>
+      <div class="method__step"><div class="method__n">04 / Drift</div><div class="method__t">Where it bends</div><p class="method__d">The exact move &mdash; a dropped caveat, a widened scope, a swapped word &mdash; and what it changes.</p></div>
+    </div>
+    <p class="method__note"><b>What this is not.</b> Provenance does not rule on whether an underlying issue is real or important. Climate consensus is real; hunger is real; gun deaths are real. The register checks one narrower thing: whether the cited number says what the citation implies it says. Often the honest correction makes a claim <b>stronger</b>, not weaker.</p>
+  </div>
+</section>
+<section class="controls" id="register">
+  <div class="wrap">
+    <div class="controls__head">
+      <h2 class="controls__title">The Register</h2>
+      <span class="controls__count" id="filterCount"></span>
+    </div>
+    <p class="controls__legend">Eight ways a statistic drifts from its source. The codes below are both a taxonomy and a filter &mdash; most distortions are one of these moves, and a few are several at once.</p>
+    <div class="filtergroup">
+      <p class="filtergroup__label">Filter by drift type</p>
+      <div class="chips" id="driftChips"></div>
+      <p class="chip__gloss" id="driftGloss">Hover a code to see how that distortion works.</p>
+    </div>
+    <div class="filtergroup">
+      <p class="filtergroup__label">Filter by domain</p>
+      <div class="chips" id="domainChips"></div>
+    </div>
+  </div>
+</section>
+<section class="catalog">
+  <div class="wrap"><div class="grid" id="grid"></div></div>
+</section>
+<div class="dossier" id="dossier" role="dialog" aria-modal="true" aria-labelledby="dossierTitle" tabindex="-1">
+  <div class="dossier__sheet">
+    <div class="dossier__bar">
+      <span class="dossier__bar-id" id="dossierAcc">PRV-000</span>
+      <button class="dossier__close" id="dossierClose" aria-label="Close dossier">Close <span class="x">&times;</span></button>
+    </div>
+    <div class="dossier__body" id="dossierBody"></div>
+  </div>
+</div>
+<footer class="colophon">
+  <div class="wrap">
+    <div class="colophon__grid">
+      <div>
+        <p class="col-h">About the register</p>
+        <p class="col-b">Widely-cited statistics are a game of telephone: the version that travels is rarely the version the source supports. Provenance rebuilds the chain of custody for a set of famous numbers, so a reader can see for themselves where a claim parts ways with its evidence.</p>
+        <p class="col-b">Every quotation here is taken from the primary document and linked where a public copy exists. Where a claim traces to no primary source at all, the register says so plainly &mdash; that absence is itself the finding.</p>
+      </div>
+      <div>
+        <p class="col-h">Drift taxonomy</p>
+        <div class="col-list" id="colophonTax"></div>
+      </div>
+      <div>
+        <p class="col-h">Sources span</p>
+        <div class="col-list">Peer-reviewed journals<br>Federal statistical agencies<br>Original survey instruments<br>Government filings<br>&mdash; and dead ends</div>
+      </div>
+    </div>
+    <div class="colophon__rule"></div>
+    <div class="colophon__base">
+      <span class="credit">Built by <b>&mdash; your name here</b> &middot; a demonstration piece</span>
+      <span>Provenance &middot; The Register of Statistics That Travel &middot; <span id="year"></span></span>
+    </div>
+  </div>
+</footer>
+<script>
+/* ===== DRIFT TAXONOMY — each distortion classified by the move it makes ===== */
+const DRIFT = {
+  CAVEAT:  {label:"Caveat dropped",    gloss:"A load-bearing qualifier was cut, so the number now claims more than the source did."},
+  SCOPE:   {label:"Scope inflated",    gloss:"The population or denominator was quietly widened beyond what was measured."},
+  TERM:    {label:"Term swapped",      gloss:"A precisely-defined concept was retold using a vaguer or more vivid word."},
+  FROZEN:  {label:"Figure frozen",     gloss:"An estimate that has since moved is still quoted as if it were current."},
+  PHANTOM: {label:"Source phantom",    gloss:"Follow the citation and it dead-ends in no primary evidence at all."},
+  METHOD:  {label:"Method elided",     gloss:"Several defensible numbers exist; the citation never says which one it used."},
+  BLEND:   {label:"Categories blended",gloss:"A real figure folds in cases that don't fit the claim being made."},
+  SLOGAN:  {label:"Slogan laundered",  gloss:"A marketing or rhetorical number was reintroduced as a research finding."}
+};
+/* ===== THE REGISTER — every field checked against the primary source ===== */
+const DATA = [
+{
+  id:"climate-consensus", acc:"PRV-001", domain:"Climate", num:"97%",
+  claim:"97% of scientists agree on climate change.",
+  drift:["SCOPE","CAVEAT"],
+  cited:'97% of <del>scientists</del> agree on climate change.',
+  sourced:'97.1% <ins>of the one-third of climate papers that stated a position</ins> endorsed human-caused warming.',
+  source:{authors:"Cook, Nuccitelli, Green, Richardson, Winkler, et al.", title:"Quantifying the Consensus on Anthropogenic Global Warming in the Scientific Literature", venue:"Environmental Research Letters 8(2): 024024 · 2013", links:[{label:"Primary study (Environ. Res. Lett.)", url:"https://iopscience.iop.org/article/10.1088/1748-9326/8/2/024024"}]},
+  quote:"Among abstracts expressing a position on AGW, 97.1% endorsed the consensus position that humans are causing global warming.",
+  quoteAttr:"— Cook et al., abstract, 2013",
+  driftText:"The study classified 11,944 abstracts. 66.4% expressed <em>no position</em>; only 32.6% endorsed AGW. The 97.1% is the share <em>among the third that took a position</em> — not of all scientists, and not of all papers. Drop the phrase “expressing a position,” and a ratio within a subset is rebranded as a headcount of the whole field.",
+  caveats:"The figure measures published abstracts, not surveyed scientists, and counts implicit along with explicit endorsements. Reasonable critics dispute the abstract-rating method — but author self-ratings produced an almost identical 97.2%, and independent studies (Oreskes 2004; Anderegg 2010; Verheggen 2014; Powell 2019) land between 97% and 99.9%.",
+  context:"The consensus is real, and the better-phrased versions of this claim are on firmer ground than the slogan. The drift here doesn't inflate the conclusion so much as misdescribe what was counted — which is exactly the kind of imprecision that hands critics an easy target.",
+  verdict:"A real result, mislabeled: a 97% share <b>within papers that took a position</b> became “97% of scientists.”"
+},
+{
+  id:"gun-background-check", acc:"PRV-002", domain:"Guns", num:"40%",
+  claim:"40% of gun sales happen without a background check.",
+  drift:["SCOPE","FROZEN"],
+  cited:'40% of gun <del>sales</del> happen without a background check.',
+  sourced:'~40% of gun <ins>acquisitions — including gifts and inheritances</ins> were from unlicensed sources, in a 1994 survey.',
+  source:{authors:"Philip J. Cook & Jens Ludwig", title:"Guns in America: National Survey on Private Ownership and Use of Firearms", venue:"U.S. Dept. of Justice, National Institute of Justice · survey 1994, published 1997. Updated by Miller, Hepburn & Azrael, Annals of Internal Medicine, 2017.", links:[{label:"Provenance trace (PolitiFact)", url:"https://www.politifact.com/factchecks/2017/mar/16/hannah-willard/do-40-gun-sales-lack-background-checks-new-data-sa/"},{label:"2017 update reporting (The Trace)", url:"https://www.thetrace.org/2017/01/gun-background-check-private-sale-loophole/"}]},
+  quote:"…our research is the original source of the 40-percent statistic… we don’t know the current percentage — nor does anyone else.",
+  quoteAttr:"— Cook & Ludwig, National Review op-ed, 2013",
+  driftText:"The number comes from a 1994 survey in which just 251 people answered the relevant question — taken eight months after the Brady Act, so some acquisitions predated background-check requirements. It counted all <em>acquisitions</em>, including guns received as gifts or inheritances. Restricted to actual <em>purchases</em>, the original authors put it at 14–22%. A 2017 study built to update it found 22%.",
+  caveats:"Even the authors disowned the figure for contemporary use; private-sale transfers remain real and millions in number, but “40% of sales” overstates both the scope (acquisitions, not sales) and the currency (1994 data) of the claim.",
+  context:"The private-sale gap is a genuine policy question. The drift isn't that loopholes don't exist — it's that a 30-year-old number about acquisitions got frozen in place and relabeled as current data about sales.",
+  verdict:"Acquisitions became “sales,” and a 1994 figure the authors themselves retired keeps circulating as today’s number."
+},
+{
+  id:"gun-home", acc:"PRV-003", domain:"Guns", num:"43×",
+  claim:"A gun in the home is 43× more likely to kill a family member than an intruder.",
+  drift:["BLEND"],
+  cited:'43× more likely to kill <del>a family member</del> than an intruder.',
+  sourced:'43 deaths in the home per self-defense killing — <ins>but 37 of the 43 were suicides.</ins>',
+  source:{authors:"Arthur L. Kellermann & Donald T. Reay", title:"Protection or Peril? An Analysis of Firearm-Related Deaths in the Home", venue:"New England Journal of Medicine 314(24): 1557–1560 · 1986", links:[{label:"Primary study (NEJM, via DOI)", url:"https://doi.org/10.1056/NEJM198606123142406"}]},
+  quote:"…for every case of self-protection homicide… there were 1.3 accidental deaths, 4.6 criminal homicides, and 37 suicides involving firearms.",
+  quoteAttr:"— Kellermann & Reay, NEJM, 1986",
+  driftText:"The 43-to-1 ratio is real, but it is a ratio of <em>deaths to deaths</em>: 1.3 + 4.6 + 37 ≈ 43. The overwhelming share — 37 of 43 — are suicides, not a homeowner shooting an intruder. Folding suicides into “kill a family member,” and comparing only against fatal self-defense, ignores every defensive use that ends without a body: brandishing, wounding, or deterrence. The popular retelling often inflates it further to “family member, friend, or acquaintance.”",
+  caveats:"The paper's own conclusion was cautious — that keeping a gun for protection should be questioned. Later case-control work (Kellermann 1993) found a smaller 2.7× homicide association. The relationship between household guns and suicide is well supported; the 43× figure is simply not a measure of self-defense efficacy.",
+  context:"Household-gun risk is a serious, well-studied subject. The drift is a category error: a deaths-to-deaths tally dominated by suicide gets retold as a verdict on whether a gun protects you from intruders.",
+  verdict:"A real ratio, wrong referent: 37 of the 43 “family member” deaths were suicides, not defense gone wrong."
+},
+{
+  id:"ceo-pay", acc:"PRV-004", domain:"Economy", num:"290×",
+  claim:"CEOs make about 300 times the typical worker.",
+  drift:["METHOD"],
+  cited:'CEOs make ~300× the typical worker.',
+  sourced:'<ins>By one measure 290×; by another, the same year, 192×</ins> — both for the top 350 firms.',
+  source:{authors:"Josh Bivens & Jori Kandra, Economic Policy Institute", title:"CEO Pay (annual series) — realized vs. granted compensation, top 350 U.S. firms", venue:"Economic Policy Institute · 2023 data published 2024; 281× reported for 2024", links:[{label:"2023 figures (EPI)", url:"https://www.epi.org/publication/ceo-pay-in-2023/"},{label:"CEO pay data page (EPI)", url:"https://www.epi.org/publication/ceo-pay/"}]},
+  quote:"The realized CEO-to-worker compensation ratio was 290-to-1 in 2023… The granted CEO-to-worker compensation ratio was 192-to-1 in 2023.",
+  quoteAttr:"— EPI, CEO Pay in 2023",
+  driftText:"There is no single CEO-pay ratio. The same source, same year, reports <em>290×</em> using “realized” pay (stock cashed in) and <em>192×</em> using “granted” pay (stock valued when awarded) — a gap of nearly 100 points from one methodological choice. It also covers the <em>top 350 firms</em>, uses an “average of ratios,” and compares against production/non-supervisory workers. Other bodies (AFL-CIO, SEC company filings) produce yet other numbers, some far higher.",
+  caveats:"All defensible methods agree the ratio is large and has risen sharply since the 1960s (when it was ~20–21×). The issue is precision: a bare “300×” hides which measure, which firms, and which workers — so two people can cite the “real” number and mean different things.",
+  context:"That executive pay has decoupled from worker pay is not in dispute. The drift is that a contested measurement with several legitimate answers gets quoted as a single hard fact, with the method left unstated.",
+  verdict:"Not wrong, just unspecified: at least four legitimate ratios exist, and the citation rarely says which."
+},
+{
+  id:"child-hunger", acc:"PRV-005", domain:"Poverty", num:"1 in 5",
+  claim:"1 in 5 American children go to bed hungry.",
+  drift:["TERM"],
+  cited:'1 in 5 children go to bed <del>hungry</del>.',
+  sourced:'~1 in 5 children live in a <ins>food-insecure household</ins> — an access measure; children actually hungry is far rarer.',
+  source:{authors:"Rabbitt, Reed-Jones, Hales & Burke, USDA Economic Research Service", title:"Household Food Security in the United States in 2023 (ERR-337)", venue:"U.S. Dept. of Agriculture, Economic Research Service · 2024", links:[{label:"Primary report (USDA ERS)", url:"https://www.ers.usda.gov/publications/pub-details?pubid=109895"}]},
+  quote:"…children, along with adults, experienced instances of very low food security in 1.0 percent of households with children.",
+  quoteAttr:"— USDA ERS, 2023",
+  driftText:"USDA measures <em>food insecurity</em> — “limited or uncertain access to adequate food” at some point in the year — and explicitly distinguishes it from hunger, “a physiological condition that may result from food insecurity.” In 2023, 13.5% of households (about 1 in 7) were food insecure; among households <em>with children</em> the figure is higher. But children themselves experienced the severe range — reduced intake, disrupted eating, actual hunger — in roughly <em>1%</em> of households with children. USDA even publishes a guide titled “Getting It Right: Avoiding Common Misinterpretations.”",
+  caveats:"Food insecurity is a real hardship worth measuring; this is not a claim that the problem is invented. But “go to bed hungry” describes very low food security (~1% of households with children), while “food insecure” mostly means a household worried about or had to stretch its food budget — a meaningfully different, and broader, condition.",
+  context:"The number itself (~1 in 5 households with children touched by food insecurity) is defensible. The drift is the swap from an economic-access term to a visceral physiological one — exactly the conflation the agency that produces the statistic warns against.",
+  verdict:"“Food insecure” quietly became “hungry,” collapsing a broad access measure into a much rarer, more severe one."
+},
+{
+  id:"undocumented", acc:"PRV-006", domain:"Immigration", num:"11M",
+  claim:"There are 11 million undocumented immigrants in the U.S.",
+  drift:["FROZEN"],
+  cited:'There are <del>11 million</del> undocumented immigrants.',
+  sourced:'A <ins>modeled estimate</ins> that sat near 11M for a decade — and reached ~14M by 2023.',
+  source:{authors:"Jeffrey S. Passel & Jens Manuel Krogstad, Pew Research Center", title:"U.S. Unauthorized Immigrant Population Reached a Record 14 Million in 2023", venue:"Pew Research Center · August 2025 (residual-method estimates)", links:[{label:"Primary report (Pew Research Center)", url:"https://www.pewresearch.org/race-and-ethnicity/2025/08/21/u-s-unauthorized-immigrant-population-reached-a-record-14-million-in-2023/"}]},
+  quote:"The Center uses a “residual method” to estimate the size [of] the unauthorized immigrant population.",
+  quoteAttr:"— Pew Research Center, 2025",
+  driftText:"“11 million” is not a count. It is the output of a model — total foreign-born population from Census surveys, minus the estimated legal immigrant population. The residual figure held near 11M from about 2009 to 2021 and got repeated as a fixed, almost census-like fact. Pew has since revised 2022 upward (11.0M → 11.8M) and put 2023 at a record <em>14 million</em>. Alternative methods have produced estimates as high as the low-20-millions.",
+  caveats:"For one reference date, the major estimators (DHS, Pew, CMS) cluster tightly around the same value — the method is sound. The drift is treating a moving estimate with real uncertainty as a frozen, exact, counted number.",
+  context:"One of the rare entries where the drift is purely temporal and apolitical: both sides of the debate cited “11 million” for years as though it were carved in stone, when it was always an estimate — and one that has since moved substantially.",
+  verdict:"A modeled estimate, frozen in speech: “11 million” outlived the data, which has since risen to ~14 million."
+},
+{
+  id:"eight-glasses", acc:"PRV-007", domain:"Health", num:"8",
+  claim:"You should drink eight glasses of water a day.",
+  drift:["CAVEAT"],
+  cited:'Drink eight glasses of water a day.',
+  sourced:'~2.5 L of water a day — <ins>“most of this quantity is contained in prepared foods.”</ins>',
+  source:{authors:"Heinz Valtin (tracing the 1945 Food and Nutrition Board)", title:"“Drink at least eight glasses of water a day.” Really?", venue:"American Journal of Physiology — Regulatory, Integrative and Comparative Physiology 283(5): R993–R1004 · 2002", links:[{label:"Primary review (Am. J. Physiol.)", url:"https://journals.physiology.org/doi/full/10.1152/ajpregu.00365.2002"}]},
+  quote:"A suitable allowance of water for adults is 2.5 liters daily… Most of this quantity is contained in prepared foods.",
+  quoteAttr:"— Food and Nutrition Board, 1945 (quoted in Valtin, 2002)",
+  driftText:"The likeliest origin is a single 1945 recommendation. It gave ~2.5 L/day — and immediately added that <em>most of that water already comes from food</em>. Drop the second sentence and a description of <em>total</em> intake from all sources becomes a prescription to <em>drink</em> eight glasses on top of everything else. Valtin's review found no scientific basis for the “8×8” rule; a 2022 study of water turnover across 26 countries found needs ranging from ~1 to over 10 litres.",
+  caveats:"Hydration matters and thirst is real; this is not advice to drink less when thirsty. The point is that the specific “eight glasses” target was never an evidence-based requirement — it is a rounded number with its qualifying clause amputated.",
+  context:"A clean example of a dropped caveat: one missing sentence converts a statement about how much water passes through the body into a daily drinking quota that the source never set.",
+  verdict:"One sentence went missing — “most of this is in your food” — turning total intake into a drinking target."
+},
+{
+  id:"ten-thousand-steps", acc:"PRV-008", domain:"Health", num:"10,000",
+  claim:"You need 10,000 steps a day for health.",
+  drift:["SLOGAN"],
+  cited:'You need <del>10,000 steps</del> a day.',
+  sourced:'A <ins>1965 pedometer slogan</ins> — “Manpo-kei,” the 10,000-step meter. Benefits plateau well below it.',
+  source:{authors:"Yamasa Tokei Keiki (marketing origin); dose-response by I-Min Lee et al. and Paluch et al.", title:"“Manpo-kei” (万歩計, “10,000-step meter”) pedometer campaign, 1965", venue:"Origin: Tokyo, 1965. Evidence: JAMA Internal Medicine (Lee, 2019); European Journal of Preventive Cardiology (Paluch, 2023).", links:[{label:"On the marketing origin (Popular Science)", url:"https://www.popsci.com/health/10000-steps-debunk-science/"}]},
+  quote:"There were no actual studies that had looked at ‘10,000 steps.’",
+  quoteAttr:"— I-Min Lee, Harvard epidemiologist, on the figure's origin",
+  driftText:"Riding the 1964 Tokyo Olympics fitness wave, the Yamasa company sold a pedometer called the <em>Manpo-kei</em> — literally “10,000-step meter.” The number was chosen because it was round, memorable, and the Japanese character for 10,000 (万) resembles a walking figure. It was a product name, not a clinical threshold. Modern dose-response studies find mortality benefit accruing well below 10,000 — with much of it by roughly 4,000–7,500 steps.",
+  caveats:"Walking is genuinely good for you, and 10,000 steps is a fine goal if it motivates movement. But the figure carries no special scientific authority; treating it as the line between “healthy” and “lazy” mistakes a 1960s slogan for a research finding.",
+  context:"The textbook case of a marketing number laundered into health science: a soy-sauce-and-clock company's ad copy became a global wellness commandment.",
+  verdict:"A pedometer ad from 1965 — not a study — set the target everyone now treats as medical fact."
+},
+{
+  id:"knuckle-arthritis", acc:"PRV-009", domain:"Health", num:"36,500",
+  claim:"Cracking your knuckles causes arthritis.",
+  drift:["PHANTOM"],
+  cited:'Cracking your knuckles <del>causes arthritis</del>.',
+  sourced:'<ins>36,500 cracks of one hand over 50 years</ins> produced no arthritis in either hand.',
+  source:{authors:"Donald L. Unger", title:"Does Knuckle Cracking Lead to Arthritis of the Fingers?", venue:"Arthritis & Rheumatism 41(5): 949–950 · 1998. (Ig Nobel Prize in Medicine, 2009.)", links:[{label:"On the study & quotes (Scientific American)", url:"https://www.scientificamerican.com/article/crack-research/"}]},
+  quote:"There was no arthritis in either hand… there is no apparent relationship between knuckle cracking and the subsequent development of arthritis of the fingers.",
+  quoteAttr:"— Donald Unger, Arthritis & Rheumatism, 1998",
+  driftText:"The warning never had a primary source. To test it, Dr. Donald Unger cracked the knuckles of his <em>left</em> hand at least twice daily for 50 years — about 36,500 cracks — and left his right hand alone as a control. Neither hand developed arthritis, and there was no difference between them. Larger population studies (1990, 2011, 2017) likewise find no association. The popping sound is gas forming in joint fluid, not joint damage.",
+  caveats:"It's a single-subject experiment — n = 1 — which Unger noted with good humor. But it points the same way as every controlled study since: no link to arthritis. (Aggressive cracking may relate to reduced grip strength; arthritis is a separate matter.)",
+  context:"A phantom-source claim: the original warning traces to nobody's data — only to relatives' advice — while the one person who actually ran the experiment found nothing.",
+  verdict:"A folk warning with no source, refuted by 50 years and 36,500 cracks on a single dedicated hand."
+},
+{
+  id:"sugar-hyper", acc:"PRV-010", domain:"Health", num:"16",
+  claim:"Sugar makes kids hyperactive.",
+  drift:["PHANTOM"],
+  cited:'Sugar makes kids <del>hyperactive</del>.',
+  sourced:'<ins>16 studies, pooled</ins>, found sugar does not affect children’s behavior — the belief is expectancy.',
+  source:{authors:"Mark L. Wolraich, David B. Wilson & J. Wade White", title:"The Effect of Sugar on Behavior or Cognition in Children: A Meta-analysis", venue:"JAMA 274(20): 1617–1621 · 1995", links:[{label:"Primary meta-analysis (PubMed)", url:"https://pubmed.ncbi.nlm.nih.gov/7474248/"}]},
+  quote:"…sugar does not affect the behavior or cognitive performance of children. The strong belief of parents may be due to expectancy and common association.",
+  quoteAttr:"— Wolraich, Wilson & White, JAMA, 1995",
+  driftText:"A meta-analysis pooling 16 placebo-controlled, double-blind studies found <em>no effect</em> of sugar on children's behavior or cognition. A companion trial gave children diets high in sucrose, aspartame, or placebo and measured 39 behavioral variables — no differences on any. The persistence of the belief is itself documented: in a separate study, mothers <em>told</em> their children had received sugar (when they hadn't) rated them as more hyperactive.",
+  caveats:"A small effect in a subset of children can't be fully ruled out, and these are controlled-trial conditions. But the headline belief — sugar reliably causes hyperactivity — is not supported, and a likely driver is the parental expectancy effect.",
+  context:"A phantom-source claim with an unusually clean refutation: the thing “everyone knows” fails under blinding, and the conviction tracks what observers expect to see, not what the children do.",
+  verdict:"Under double-blind conditions sugar does nothing; the “sugar high” lives mostly in the observer's expectations."
+},
+{
+  id:"attention-span", acc:"PRV-011", domain:"Media", num:"8 sec",
+  claim:"Humans now have an 8-second attention span — shorter than a goldfish.",
+  drift:["PHANTOM"],
+  cited:'An 8-second attention span, <del>shorter than a goldfish</del>.',
+  sourced:'A corporate slide citing a firm that <ins>never produced the underlying data.</ins>',
+  source:{authors:"Microsoft Canada (Consumer Insights); traced by BBC and the Wall Street Journal", title:"“Attention Spans” report (2015), sourced to “Statistic Brain”", venue:"Report 2015. Tracing: Simon Maybin, BBC (2017); Jo Craven McGinty, Wall Street Journal (2017).", links:[{label:"Source trace (WSJ, via Univ. of Wisconsin)", url:"https://internet.psych.wisc.edu/wp-content/uploads/532-Master/532-UnitPages/Unit-09/Goldfish_MythBusting.pdf"}]},
+  quote:"There is no real evidence that it’s changed since it was first reported in the late 1800s.",
+  quoteAttr:"— Michael Posner, attention researcher, to the WSJ",
+  driftText:"A 52-page 2015 Microsoft Canada report claimed the human attention span fell from 12 to 8 seconds, and that a goldfish manages 9. The report credited a company called “Statistic Brain.” When the BBC tried to verify it, Statistic Brain could provide no support for the figures. The “9-second goldfish” has no scientific basis either — no one measures goldfish attention spans, and goldfish actually recall feeding spots for days. Attention researchers say the span hasn't measurably changed in over a century.",
+  caveats:"Attention is too complex to reduce to one number, so even the framing is shaky. The specific viral statistic, though, is the cleanest possible dead end: report → cited firm → no method, no study, nothing.",
+  context:"The platonic phantom source. A number went viral precisely because it sounded familiar and was easy to repeat — and the citation chain terminates in a company that couldn't show its work.",
+  verdict:"Trace it and it vanishes: a corporate slide cited a firm that had no data — and the goldfish was invented too."
+},
+{
+  id:"ten-percent-brain", acc:"PRV-012", domain:"Media", num:"10%",
+  claim:"We only use 10% of our brains.",
+  drift:["PHANTOM"],
+  cited:'We only use <del>10%</del> of our brains.',
+  sourced:'<ins>No source exists.</ins> Imaging shows nearly all of the brain is active across a day.',
+  source:{authors:"No primary source", title:"Commonly misattributed (e.g. to Einstein, or to William James's “latent potential”) — neither said it.", venue:"There is no study, paper, or measurement behind the “10%” figure.", links:[]},
+  quote:"There is no primary source to cite. That absence is the finding.",
+  quoteAttr:"— the register",
+  driftText:"This is a claim with no origin document at all. It is often hung on Albert Einstein (no record he ever said it) or traced loosely to William James's remark that people meet only a fraction of their potential — a motivational sentiment about effort, not a neurological measurement of unused tissue. Functional imaging shows essentially all regions of the brain are active over the course of a day; damage to almost any part produces deficits. The “10%” has no measurement behind it.",
+  caveats:"Brains do have redundancy and not all neurons fire at once — but “we use 10%” is not a finding from anywhere. It is a free-floating figure with a fabricated pedigree.",
+  context:"Listed here because the empty source box is the point: a tracer's most important output is sometimes the discovery that there was never anything to trace.",
+  verdict:"A figure with a forged lineage: no study, no measurement — and the famous attributions are false."
+},
+{
+  id:"spiders-swallowed", acc:"PRV-013", domain:"Everyday", num:"8",
+  claim:"You swallow 8 spiders a year in your sleep.",
+  drift:["PHANTOM"],
+  cited:'You swallow <del>8 spiders a year</del> in your sleep.',
+  sourced:'No basis — and the famous <ins>“origin” of the myth is itself unverified.</ins>',
+  source:{authors:"No scientific source", title:"Widely attributed to a 1993 column said to have invented the “fact” to show how misinformation spreads — an origin story that is itself undocumented.", venue:"Entomologically implausible; no primary evidence in either direction.", links:[]},
+  quote:"There is no primary source to cite. That absence is the finding.",
+  quoteAttr:"— the register",
+  driftText:"There is no evidence people routinely swallow spiders while sleeping — a vibrating, breathing, occasionally-snoring human is closer to a predator than a destination, and spiders avoid it. The twist: the most-repeated <em>debunking</em> claims the statistic was deliberately planted in a 1993 magazine column to demonstrate how readily people believe fake facts. That origin story is, fittingly, undocumented and probably apocryphal. The myth and its tidy debunking are <em>both</em> unsourced.",
+  caveats:"Proving a universal negative about sleep is impossible, so this rests on plausibility, not a study. What can be said cleanly: neither the statistic nor its celebrated backstory has a verifiable source.",
+  context:"Provenance all the way down. Included because it shows the failure mode in its purest form — even the story about where a false fact came from can be a false fact.",
+  verdict:"Unsourced twice over: no evidence for the claim, and none for the myth-origin everyone repeats to debunk it."
+},
+{
+  id:"viking-helmets", acc:"PRV-014", domain:"Everyday", num:"1876",
+  claim:"Vikings wore horned helmets.",
+  drift:["PHANTOM"],
+  cited:'Vikings wore <del>horned helmets</del>.',
+  sourced:'An <ins>1876 opera costume</ins>, laundered into history. No horned Viking helmet has been excavated.',
+  source:{authors:"Costume design by Carl Emil Doepler", title:"Costumes for Wagner's “Der Ring des Nibelungen” (Bayreuth, 1876), and 19th-century Romantic nationalism", venue:"No archaeological find: surviving Norse helmets are hornless. The horned image dates to the 19th century.", links:[]},
+  quote:"There is no archaeological source. The horns are a 19th-century stage invention.",
+  quoteAttr:"— the register",
+  driftText:"No excavated Viking-age helmet has horns. The one largely complete Norse helmet ever found (Gjermundbu, Norway) is a rounded iron cap — hornless. The horned-Viking image was popularized in the 1800s: costume designer Carl Emil Doepler gave the characters horned helmets for the 1876 premiere of Wagner's <em>Ring</em> cycle, and Romantic-era painters and nationalists ran with it. Bronze Age horned helmets exist from much earlier, unrelated cultures — which may have helped the confusion travel.",
+  caveats:"A factoid rather than a statistic, included to show the same mechanism at work: with no primary evidence, a vivid 19th-century stage image hardened into “common knowledge” about a people who left no horned helmets behind.",
+  context:"The drift here is sourcing theatre as history. The visual is so satisfying that its complete absence from the archaeological record rarely slows it down.",
+  verdict:"An opera costume from 1876 became a historical “fact” — with not one excavated horned helmet behind it."
+}
+];
+</script>
+<script>
+(function(){
+  "use strict";
+  var $ = function(s,r){return (r||document).querySelector(s);};
+  var reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var state = { drift:null, domain:null };
+  var lastFocus = null;
+  /* ---- derive domains in first-appearance order ---- */
+  var domains = [];
+  DATA.forEach(function(d){ if(domains.indexOf(d.domain)<0) domains.push(d.domain); });
+  /* ---- counts ---- */
+  $("#entryCount").textContent = DATA.length + " entries on file";
+  $("#year").textContent = new Date().getFullYear();
+  /* ---- drift filter chips ---- */
+  var driftWrap = $("#driftChips");
+  var driftGloss = $("#driftGloss");
+  Object.keys(DRIFT).forEach(function(code){
+    var b = document.createElement("button");
+    b.className = "chip chip--drift";
+    b.setAttribute("aria-pressed","false");
+    b.innerHTML = '<span class="chip__code">'+code+'</span>'+DRIFT[code].label;
+    b.addEventListener("mouseenter", function(){ driftGloss.textContent = DRIFT[code].gloss; });
+    b.addEventListener("focus", function(){ driftGloss.textContent = DRIFT[code].gloss; });
+    b.addEventListener("click", function(){
+      state.drift = (state.drift === code) ? null : code;
+      syncChips(); renderGrid();
+    });
+    b.dataset.code = code;
+    driftWrap.appendChild(b);
+  });
+  /* ---- domain filter chips ---- */
+  var domainWrap = $("#domainChips");
+  domains.forEach(function(dom){
+    var b = document.createElement("button");
+    b.className = "chip";
+    b.setAttribute("aria-pressed","false");
+    b.textContent = dom;
+    b.addEventListener("click", function(){
+      state.domain = (state.domain === dom) ? null : dom;
+      syncChips(); renderGrid();
+    });
+    b.dataset.domain = dom;
+    domainWrap.appendChild(b);
+  });
+  function syncChips(){
+    driftWrap.querySelectorAll(".chip").forEach(function(c){
+      c.setAttribute("aria-pressed", String(c.dataset.code === state.drift));
+    });
+    domainWrap.querySelectorAll(".chip").forEach(function(c){
+      c.setAttribute("aria-pressed", String(c.dataset.domain === state.domain));
+    });
+  }
+  /* ---- catalog ---- */
+  var grid = $("#grid");
+  var filterCount = $("#filterCount");
+  function filtered(){
+    return DATA.filter(function(d){
+      if(state.drift && d.drift.indexOf(state.drift) < 0) return false;
+      if(state.domain && d.domain !== state.domain) return false;
+      return true;
+    });
+  }
+  function driftTags(codes){
+    return codes.map(function(c){ return '<span class="tag">'+c+'</span>'; }).join("");
+  }
+  function renderGrid(){
+    var list = filtered();
+    var bits = [];
+    if(state.drift || state.domain){
+      var parts = [];
+      if(state.domain) parts.push(state.domain);
+      if(state.drift) parts.push(DRIFT[state.drift].label);
+      filterCount.textContent = list.length + " of " + DATA.length + " · " + parts.join(" + ");
+    } else {
+      filterCount.textContent = "Showing all " + DATA.length;
+    }
+    if(!list.length){
+      grid.innerHTML = '<p class="empty">No entries match that combination. Clear a filter to see more.</p>';
+      return;
+    }
+    list.forEach(function(d){
+      bits.push(
+        '<button class="case" data-id="'+d.id+'" aria-label="Open dossier: '+d.claim.replace(/"/g,"&quot;")+'">'+
+          '<div class="case__top"><span class="case__acc">'+d.acc+'</span><span class="case__domain">'+d.domain+'</span></div>'+
+          '<div class="case__num">'+d.num+'</div>'+
+          '<div class="case__claim">&ldquo;'+d.claim+'&rdquo;</div>'+
+          '<div class="case__foot"><span class="case__drift">'+driftTags(d.drift)+'</span><span class="case__open">Trace &#8599;</span></div>'+
+        '</button>'
+      );
+    });
+    grid.innerHTML = bits.join("");
+    grid.querySelectorAll(".case").forEach(function(btn){
+      btn.addEventListener("click", function(){ openDossier(btn.dataset.id, true); });
+    });
+  }
+  /* ---- dossier ---- */
+  var dossier = $("#dossier");
+  var dossierBody = $("#dossierBody");
+  var dossierAcc = $("#dossierAcc");
+  function srcLinksHTML(src){
+    if(!src.links || !src.links.length){
+      return '<p class="srcblock__none">No public primary source to link — see the note below.</p>';
+    }
+    return '<div class="srcblock__links">'+src.links.map(function(l){
+      return '<a class="srclink" href="'+l.url+'" target="_blank" rel="noopener">'+l.label+' <span class="arr">&#8599;</span></a>';
+    }).join("")+'</div>';
+  }
+  function dossierHTML(d){
+    var idx = DATA.indexOf(d);
+    var prev = DATA[(idx-1+DATA.length)%DATA.length];
+    var next = DATA[(idx+1)%DATA.length];
+    var codeChips = d.drift.map(function(c){
+      return '<span class="tag" title="'+DRIFT[c].gloss+'">'+c+' · '+DRIFT[c].label+'</span>';
+    }).join("");
+    return ''+
+    '<p class="dossier__domain">'+d.domain+' — '+d.acc+'</p>'+
+    '<h2 class="dossier__title" id="dossierTitle">&ldquo;'+d.claim+'&rdquo;</h2>'+
+    '<p class="dossier__deck">Traced from the cited form to the primary source, and to the point where it drifts.</p>'+
+    '<div class="chain">'+
+      '<div class="chain__node chain__node--claim"><span class="chain__dot"></span>'+
+        '<p class="chain__step">01 · The claim, as cited</p>'+
+        '<p class="cited-claim">&ldquo;'+d.claim+'&rdquo;</p>'+
+      '</div>'+
+      '<div class="chain__node chain__node--source"><span class="chain__dot"></span>'+
+        '<p class="chain__step">02 · Traced to source</p>'+
+        '<div class="srcblock">'+
+          '<p class="srcblock__authors">'+d.source.authors+'</p>'+
+          '<p class="srcblock__title">'+d.source.title+'</p>'+
+          '<p class="srcblock__venue">'+d.source.venue+'</p>'+
+          srcLinksHTML(d.source)+
+        '</div>'+
+      '</div>'+
+      '<div class="chain__node chain__node--quote"><span class="chain__dot"></span>'+
+        '<p class="chain__step">03 · What the source says</p>'+
+        '<blockquote class="quote">&ldquo;'+d.quote+'&rdquo;<span class="quote__attr">'+d.quoteAttr+'</span></blockquote>'+
+      '</div>'+
+      '<div class="chain__node chain__node--drift"><span class="chain__dot"></span>'+
+        '<p class="chain__step">04 · Where it drifts</p>'+
+        '<div class="redline">'+
+          '<div class="redline__row"><span class="redline__tag">As cited</span><span class="redline__text">'+d.cited+'</span></div>'+
+          '<div class="redline__row redline__row--sourced"><span class="redline__tag">As sourced</span><span class="redline__text">'+d.sourced+'</span></div>'+
+        '</div>'+
+        '<p class="drift-explain">'+d.driftText+'</p>'+
+      '</div>'+
+      '<div class="chain__node chain__node--caveat"><span class="chain__dot"></span>'+
+        '<p class="chain__step">05 · Methodology &amp; caveats</p>'+
+        '<p class="caveats">'+d.caveats+'</p>'+
+      '</div>'+
+    '</div>'+
+    '<div class="verdict">'+
+      '<div class="verdict__codes">'+codeChips+'</div>'+
+      '<p class="verdict__line">'+d.verdict+'</p>'+
+    '</div>'+
+    '<div class="context">'+
+      '<p class="context__label">What this is not</p>'+
+      '<p class="context__text">'+d.context+'</p>'+
+    '</div>'+
+    '<div class="dossier__nav">'+
+      '<button class="dnav dnav--prev" data-id="'+prev.id+'"><span class="dnav__dir">&larr; Previous</span>'+prev.acc+' · '+prev.num+'</button>'+
+      '<button class="dnav dnav--next" data-id="'+next.id+'"><span class="dnav__dir">Next &rarr;</span>'+next.acc+' · '+next.num+'</button>'+
+    '</div>';
+  }
+  function openDossier(id, pushHash){
+    var d = DATA.filter(function(x){return x.id===id;})[0];
+    if(!d) return;
+    lastFocus = document.activeElement;
+    dossierAcc.textContent = d.acc;
+    dossierBody.innerHTML = dossierHTML(d);
+    dossier.classList.add("is-open");
+    document.body.style.overflow = "hidden";
+    dossier.scrollTop = 0;
+    dossierBody.parentElement.scrollTop = 0;
+    if(pushHash) history.replaceState(null,"","#/case/"+id);
+    // wire prev/next
+    dossierBody.querySelectorAll(".dnav").forEach(function(b){
+      b.addEventListener("click", function(){ openDossier(b.dataset.id, true); });
+    });
+    $("#dossierClose").focus();
+  }
+  function closeDossier(){
+    dossier.classList.remove("is-open");
+    document.body.style.overflow = "";
+    if(location.hash.indexOf("#/case/")===0) history.replaceState(null,"",location.pathname+location.search);
+    if(lastFocus && lastFocus.focus) lastFocus.focus();
+  }
+  $("#dossierClose").addEventListener("click", closeDossier);
+  dossier.addEventListener("click", function(e){ if(e.target === dossier) closeDossier(); });
+  document.addEventListener("keydown", function(e){
+    if(e.key === "Escape" && dossier.classList.contains("is-open")) closeDossier();
+    // simple focus trap
+    if(e.key === "Tab" && dossier.classList.contains("is-open")){
+      var f = dossier.querySelectorAll('a[href],button,[tabindex]:not([tabindex="-1"])');
+      if(!f.length) return;
+      var first = f[0], last = f[f.length-1];
+      if(e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+      else if(!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+    }
+  });
+  /* ---- colophon taxonomy ---- */
+  $("#colophonTax").innerHTML = Object.keys(DRIFT).map(function(c){
+    return c.charAt(0)+c.slice(1).toLowerCase()+" &mdash; "+DRIFT[c].label;
+  }).join("<br>");
+  /* ---- hero: the self-correcting headline ---- */
+  function runHero(){
+    var del = $("#heroDel"), ins = $("#heroIns"), src = $("#heroSrc");
+    if(reduceMotion){
+      del.style.setProperty("--strike",1); ins.style.setProperty("--reveal",1);
+      ins.style.setProperty("--rise","0"); src.style.setProperty("--reveal",1);
+      return;
+    }
+    setTimeout(function(){ del.style.setProperty("--strike",1); }, 900);
+    setTimeout(function(){
+      ins.style.setProperty("--reveal",1); ins.style.setProperty("--rise","0");
+      src.style.setProperty("--reveal",1);
+    }, 1500);
+  }
+  /* ---- deep-link support ---- */
+  function checkHash(){
+    var m = location.hash.match(/#\/case\/([\w-]+)/);
+    if(m) openDossier(m[1], false);
+  }
+  /* ---- boot ---- */
+  syncChips();
+  renderGrid();
+  runHero();
+  checkHash();
+  window.addEventListener("hashchange", checkHash);
+})();
+</script>
+</body>
+</html>
